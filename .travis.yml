@@ -8,5 +8,5 @@ install:
   - pip install git+https://github.com/cameroncurry/questrade.git
 before_script:
   - psql -c "create database travis_ci_test;" -U postgres
-scripts:
+script:
   - python setup.py test
