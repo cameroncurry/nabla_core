@@ -15,7 +15,7 @@ class QTAccessService:
         Makes API call to questrade and updates the persistent QTAccess with new access token etc.
         
         :param qt_access: QTAccess object to be refreshed. 
-        :return: None
+        :return: QTAccess
         """
         api_qt_access = APIQTAccessService.refresh(qt_access.refresh_token)
         qt_access.access_token = api_qt_access.access_token
