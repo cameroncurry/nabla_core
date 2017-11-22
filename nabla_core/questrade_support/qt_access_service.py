@@ -24,3 +24,4 @@ class QTAccessService:
         qt_access.refresh_token = api_qt_access.refresh_token
         qt_access.api_server = api_qt_access.api_server
         qt_access.save()
+        return qt_access

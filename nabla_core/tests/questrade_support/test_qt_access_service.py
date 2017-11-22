@@ -12,8 +12,8 @@ from nabla_core.questrade_support import QTAccessService
 class TestQTAccessService(TestCase):
 
     def setUp(self):
-        QTAccess.objects.create(scope=QTAccess.account_data_scope_entry(),
-                                refresh_token='aSBe7wAAdx88QTbwut0tiu3SYic3ox8F')
+        self.created_qt_access = QTAccess.objects.create(scope=QTAccess.account_data_scope_entry(),
+                                                         refresh_token='aSBe7wAAdx88QTbwut0tiu3SYic3ox8F')
 
     @patch('questrade.access.QTAccessService.refresh')
     def test_refresh_and_save(self, mock):
@@ -25,9 +25,16 @@ class TestQTAccessService(TestCase):
 
         qt_access = QTAccess.objects.get(scope='ACC')
 
-        QTAccessService.refresh_and_save_qt_access(qt_access)
+        saved_qt_access = QTAccessService.refresh_and_save_qt_access(qt_access)
         refreshed_qt_access = QTAccess.objects.get(scope='ACC')
         expected_access = (
+            (saved_qt_access.id, self.created_qt_access.id),
+            (saved_qt_access.access_token, 'C3lTUKuNQrAAmSD/TPjuV/HI7aNrAwDp'),
+            (saved_qt_access.token_type, 'Bearer'),
+            (saved_qt_access.expires_in, 300),
+            (saved_qt_access.refresh_token, 'aSBe7wAAdx88QTbwut0tiu3SYic3ox8F'),
+            (saved_qt_access.api_server, 'https://api01.iq.questrade.com'),
+            (refreshed_qt_access.id, self.created_qt_access.id),
             (refreshed_qt_access.access_token, 'C3lTUKuNQrAAmSD/TPjuV/HI7aNrAwDp'),
             (refreshed_qt_access.token_type, 'Bearer'),
             (refreshed_qt_access.expires_in, 300),
