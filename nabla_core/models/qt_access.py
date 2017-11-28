@@ -37,9 +37,9 @@ class QTAccess(UUIDModel):
     api_server = URLField(max_length=64)
 
     def __str__(self):
-        return "QTAccess[scope={}, refresh_token={}, access_token={}".format(self.scope,
-                                                                             self.refresh_token,
-                                                                             self.access_token)
+        return "QTAccess[scope={}, refresh_token={}, access_token={}]".format(self.scope,
+                                                                              self.refresh_token,
+                                                                              self.access_token)
 
     @staticmethod
     def account_data_scope_entry():
@@ -52,3 +52,9 @@ class QTAccess(UUIDModel):
     @staticmethod
     def order_placement_scope_entry():
         return QTAccess.SCOPE_CHOICES[2][0]
+
+    @staticmethod
+    def is_valid_scope(choice):
+        return choice in (QTAccess.SCOPE_CHOICES[0][0],
+                          QTAccess.SCOPE_CHOICES[1][0],
+                          QTAccess.SCOPE_CHOICES[2][0])
