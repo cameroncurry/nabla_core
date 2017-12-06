@@ -78,6 +78,27 @@ class QTAccountService:
                 }
             )
 
+    def sync_balances(self):
+        """
+        Upsert all Questrade Balances from existing QTAccounts.
+        
+        :return: None 
+        """
+        qt_accounts = QTAccount.objects.all()
+        for qt_account in qt_accounts:
+            for qt_balance in self.balances(qt_account):
+                QTBalance.objects.update_or_create(
+                    qt_account=qt_balance.qt_account,
+                    type=qt_balance.type,
+                    currency=qt_balance.currency,
+                    defaults={
+                        'cash': qt_balance.cash,
+                        'market_value': qt_balance.market_value,
+                        'total_equity': qt_balance.total_equity,
+                        'buying_power': qt_balance.buying_power
+                    }
+                )
+
     def sync_activities(self, since=datetime(2014, 1, 1), until=datetime.today()):
         """
         Upsert all Questrade Activities from existing QTAccounts.
