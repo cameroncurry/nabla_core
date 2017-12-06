@@ -7,10 +7,12 @@ from unittest.mock import patch
 from django.test import TestCase
 
 from questrade.account import QTAccount as APIQTAccount
+from questrade.account import QTBalance as APIQTBalance
 from questrade.account import QTActivity as APIQTActivity
 
 from nabla_core.models import QTAccess
 from nabla_core.models import QTAccount
+from nabla_core.models import QTBalance
 from nabla_core.models import QTActivity
 from nabla_core.questrade_support import QTAccountService
 
@@ -49,6 +51,55 @@ class TestQTAccountService(TestCase):
             (qt_accounts[0].client_account_type, 'Individual')
         )
         for result, expected in expected_accounts:
+            with self.subTest(result=result):
+                self.assertEqual(result, expected)
+
+    @patch('questrade.account.QTAccountService.balances')
+    def test_balances(self, mock):
+        mock.return_value = [
+            APIQTBalance(balance_type=APIQTBalance.BalanceType.COMBINED,
+                         currency='CAD',
+                         cash=243971.7,
+                         market_value=6017,
+                         total_equity=249988.7,
+                         buying_power=496367.2,
+                         maintenance_excess=248183.6,
+                         is_real_time=True),
+            APIQTBalance(balance_type=APIQTBalance.BalanceType.COMBINED,
+                         currency='USD',
+                         cash=198259.05,
+                         market_value=53745,
+                         total_equity=252004.05,
+                         buying_power=461013.3,
+                         maintenance_excess=230506.65,
+                         is_real_time=True)
+        ]
+
+        qt_account = QTAccount(type='Margin',
+                               number=26598145,
+                               status='Active',
+                               primary=True,
+                               client_account_type='Individual')
+
+        qt_balances = self.account_service.balances(qt_account)
+        self.assertEqual(len(qt_balances), 2)
+        self.assertIsInstance(qt_balances[0], QTBalance)
+        self.assertIsInstance(qt_balances[1], QTBalance)
+        expected_balances = (
+            (qt_balances[0].type, 'COMBINED'),
+            (qt_balances[0].currency, 'CAD'),
+            (qt_balances[0].cash, 243971.7),
+            (qt_balances[0].market_value, 6017),
+            (qt_balances[0].total_equity, 249988.7),
+            (qt_balances[0].buying_power, 496367.2),
+            (qt_balances[1].type, 'COMBINED'),
+            (qt_balances[1].currency, 'USD'),
+            (qt_balances[1].cash, 198259.05),
+            (qt_balances[1].market_value, 53745),
+            (qt_balances[1].total_equity, 252004.05),
+            (qt_balances[1].buying_power, 461013.3),
+        )
+        for result, expected in expected_balances:
             with self.subTest(result=result):
                 self.assertEqual(result, expected)
 
@@ -162,5 +213,55 @@ class TestQTAccountService(TestCase):
             (qt_accounts[1].client_account_type, 'Individual')
         )
         for result, expected in expected_accounts:
+            with self.subTest(result=result):
+                self.assertEqual(result, expected)
+
+    @patch('questrade.account.QTAccountService.balances')
+    def test_sync_accounts(self, mock):
+        mock.return_value = [
+            APIQTBalance(balance_type=APIQTBalance.BalanceType.COMBINED,
+                         currency='CAD',
+                         cash=243971.7,
+                         market_value=6017,
+                         total_equity=249988.7,
+                         buying_power=496367.2,
+                         maintenance_excess=248183.6,
+                         is_real_time=True),
+            APIQTBalance(balance_type=APIQTBalance.BalanceType.COMBINED,
+                         currency='USD',
+                         cash=198259.05,
+                         market_value=53745,
+                         total_equity=252004.05,
+                         buying_power=461013.3,
+                         maintenance_excess=230506.65,
+                         is_real_time=True)
+        ]
+
+        QTAccount.objects.create(type='Margin',
+                                 number=26598146,
+                                 status='Active',
+                                 primary=True,
+                                 client_account_type='Individual')
+
+        self.account_service.sync_balances()
+        qt_balances = QTBalance.objects.all()
+        self.assertEqual(len(qt_balances), 2)
+        self.assertIsInstance(qt_balances[0], QTBalance)
+        self.assertIsInstance(qt_balances[1], QTBalance)
+        expected_balances = (
+            (qt_balances[0].type, 'COMBINED'),
+            (qt_balances[0].currency, 'CAD'),
+            (qt_balances[0].cash, 243971.7),
+            (qt_balances[0].market_value, 6017),
+            (qt_balances[0].total_equity, 249988.7),
+            (qt_balances[0].buying_power, 496367.2),
+            (qt_balances[1].type, 'COMBINED'),
+            (qt_balances[1].currency, 'USD'),
+            (qt_balances[1].cash, 198259.05),
+            (qt_balances[1].market_value, 53745),
+            (qt_balances[1].total_equity, 252004.05),
+            (qt_balances[1].buying_power, 461013.3),
+        )
+        for result, expected in expected_balances:
             with self.subTest(result=result):
                 self.assertEqual(result, expected)

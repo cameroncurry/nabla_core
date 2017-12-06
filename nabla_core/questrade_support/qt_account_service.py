@@ -3,13 +3,17 @@
 #
 import time
 from datetime import datetime, timedelta
+
 from questrade.account import QTAccountService as APIQTAccountService
+from questrade.account import QTBalance as APIQTBalance
 
 from ..models import QTAccess
 from ..models import QTAccount
+from ..models import QTBalance
 from ..models import QTActivity
 from .transform import qt_access_core_to_api_transform
 from .transform import qt_account_api_to_core_transform
+from .transform import qt_balance_api_to_core_transform
 from .transform import qt_activity_api_to_core_transform
 
 
@@ -29,10 +33,28 @@ class QTAccountService:
         api_accounts = self._account_service.accounts()
         return [qt_account_api_to_core_transform(api_account) for api_account in api_accounts]
 
+    def balances(self, qt_account: QTAccount):
+        """
+        Retrieve all QTBalances from Questrade.
+        
+        :param qt_account: The qt account to retrieve activities from. 
+        :return: QTBalance
+        """
+        api_balances = self._account_service.balances(qt_account.number)
+        return [
+            qt_balance_api_to_core_transform(qt_account, api_balance)
+            for api_balance in api_balances
+            if api_balance.balance_type
+            in (APIQTBalance.BalanceType.PER_CURRENCY, APIQTBalance.BalanceType.COMBINED)
+        ]
+
     def activities(self, qt_account: QTAccount, start, end):
         """
         Retrieve all QTActivities from Questrade.
-
+        
+        :param qt_account: The qt account to retrieve activities from.
+        :param start: The start date of activities.
+        :param end: The end date of activities.
         :return: QTActivity 
         """
         api_activities = self._account_service.activities(qt_account.number, start, end)
@@ -56,6 +78,27 @@ class QTAccountService:
                 }
             )
 
+    def sync_balances(self):
+        """
+        Upsert all Questrade Balances from existing QTAccounts.
+        
+        :return: None 
+        """
+        qt_accounts = QTAccount.objects.all()
+        for qt_account in qt_accounts:
+            for qt_balance in self.balances(qt_account):
+                QTBalance.objects.update_or_create(
+                    qt_account=qt_balance.qt_account,
+                    type=qt_balance.type,
+                    currency=qt_balance.currency,
+                    defaults={
+                        'cash': qt_balance.cash,
+                        'market_value': qt_balance.market_value,
+                        'total_equity': qt_balance.total_equity,
+                        'buying_power': qt_balance.buying_power
+                    }
+                )
+
     def sync_activities(self, since=datetime(2014, 1, 1), until=datetime.today()):
         """
         Upsert all Questrade Activities from existing QTAccounts.
@@ -65,7 +108,6 @@ class QTAccountService:
         :return: None
         """
         qt_accounts = QTAccount.objects.all()
-        print(qt_accounts)
         for qt_account in qt_accounts:
             self._upsert_activities(qt_account, since, until)
 
@@ -111,4 +153,3 @@ class QTAccountService:
             since = next_date
             if next_date >= until:
                 break
-

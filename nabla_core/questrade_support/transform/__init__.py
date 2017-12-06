@@ -4,10 +4,12 @@
 
 from questrade.access import QTAccess as APIQTAccess
 from questrade.account import QTAccount as APIQTAccount
+from questrade.account import QTBalance as APIQTBalance
 from questrade.account import QTActivity as APIQTActivity
 
 from ...models import QTAccess
 from ...models import QTAccount
+from ...models import QTBalance
 from ...models import QTActivity
 
 
@@ -37,6 +39,23 @@ def qt_account_api_to_core_transform(qt_account: APIQTAccount):
                      status=qt_account.status,
                      primary=qt_account.is_primary,
                      client_account_type=qt_account.client_account_type)
+
+
+def qt_balance_api_to_core_transform(qt_account: QTAccount, qt_balance: APIQTBalance):
+    """
+    Transform a questrade API QTBalance to nabla_core QTBalance.
+    
+    :param qt_account: QTAccount associated to the QTBalance.
+    :param qt_balance: APIQTBalance to be transformed. 
+    :return: QTBalance
+    """
+    return QTBalance(qt_account=qt_account,
+                     type=qt_balance.balance_type.name,
+                     currency=qt_balance.currency,
+                     cash=qt_balance.cash,
+                     market_value=qt_balance.market_value,
+                     total_equity=qt_balance.total_equity,
+                     buying_power=qt_balance.buying_power)
 
 
 def qt_activity_api_to_core_transform(qt_activity: APIQTActivity):
